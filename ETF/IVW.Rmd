@@ -1,0 +1,306 @@
+---
+title: "IVW"
+author: "Edwin Cruz"
+date: "27/3/2020"
+output: 
+ rmdformats::material:
+     highlight: tango
+---
+
+```{r ,echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+options(rpubs.upload.method = "internal")
+```
+
+```{r, message=F, warning=F,include = FALSE}
+options(repos='http://cran.rstudio.com/')
+library(RCurl)
+library(packrat)
+library(rsconnect)
+library(markdown)
+library(rmarkdown)
+library(knitr)
+library(quantmod)
+library(xts)
+library(tseries)
+library(forecast)
+library(timeSeries)
+library(tframePlus)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(ggthemes)
+library(tidyverse)
+library(dygraphs)
+library(gridExtra)
+library(rugarch)
+library(aTSA)
+```
+
+# IVW
+
+<center>![IVW](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/Logo IVW.png)</center>
+
+# Acerca de IVW
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+iShares S&P 500 Growth ETF
+
+IVW rastrea un índice de acciones estadounidenses de gran capitalización. El índice selecciona acciones con características de crecimiento del índice S&P 500, en función de tres factores de crecimiento.
+
+IVW es uno de los ETF más establecidos y populares centrados en el crecimiento, que posee empresas con características de crecimiento del índice S&P 500. La metodología de estilo de S&P selecciona a las compañías en función de tres factores de crecimiento: crecimiento de ventas, crecimiento de ganancias e impulso. IVW fue uno de los primeros ETF centrados en el crecimiento lanzado, y hoy alberga una base de activos grande y estable. El fondo es extremadamente líquido: los inversores de todos los tamaños pueden negociar con facilidad. IVW muestra solo inclinaciones modestas del sector en comparación con nuestro punto de referencia de crecimiento de gran capitalización, con un sesgo pequeño pero persistente hacia las cápsulas medias. VOOG y SPYG rastrean el mismo índice con costos de tenencias igualmente bajos, pero no pueden igualar la liquidez de IVW. En general, el fondo es económico, barato de negociar y ofrece una exposición equilibrada a empresas de gran capitalización.
+
+iShares S&P 500 Growth ETF tiene una calificación de MSCI ESG Fund de A basada en un puntaje de 5.85 sobre 10. La calificación de MSCI ESG Fund mide la resistencia de las carteras a riesgos y oportunidades a largo plazo que surgen de factores ambientales, sociales y de gobernanza. Las calificaciones de los fondos ESG varían de mejor (AAA) a peor (CCC). Los fondos de alta calificación consisten en compañías que tienden a mostrar una gestión sólida y / o mejorada de los problemas ambientales, sociales y de gobierno financieramente relevantes. Estas empresas pueden ser más resistentes a las interrupciones derivadas de los eventos ESG.
+
+La clasificación de pares del fondo refleja la clasificación del nivel de calidad del fondo MSCI ESG de un fondo frente a las puntuaciones de otros fondos dentro del mismo grupo de pares, según lo definido por la Clasificación Global de Thomson Reuters Lipper. iShares S&P 500 Growth ETF se ubica en el percentil 60 dentro de su grupo homólogo y en el percentil 71 dentro del universo global de todos los fondos cubiertos por MSCI ESG Fund Ratings.[1]
+</p></div>
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=9, fig.height=6}
+Ponderaciones<-read.csv(file.choose())
+```
+# Composición de IVW
+
+```{r cols.print=20, rows.print=20,message=F, warning=F,echo=FALSE, fig.align='center'}
+Ponderaciones
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=9, fig.height=6}
+TickerList<-("IVW")
+Precio<- NULL
+for (Ticker in TickerList)
+  Precio <- cbind(Precio,
+                               getSymbols(Ticker, from="2015-01-01", to="2020-03-20", auto.assign =F ,src='yahoo') [,4]) 
+
+View(Precio)
+
+PrecioCierre <- Precio[apply(Precio ,1,function(x) all(!is.na(x))),]
+View(PrecioCierre)
+
+colnames(PrecioCierre)<- ("IVW")
+View(PrecioCierre)
+
+rendimientos <- as.timeSeries(tail(PrecioCierre,-1) / as.numeric(head(PrecioCierre,-1))-1)
+rendimientos<- as.xts(rendimientos)
+View(rendimientos)
+
+precios_log <-diff(log(PrecioCierre))
+precios_log <-precios_log[-1,]
+
+IVW<-PrecioCierre[,1]
+IVW_R<- precios_log[,1]
+```
+
+# Comportamiento del precio de IVW
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 1. Precio de Cierre de IVW: enero 2015 - marzo 2020**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+ dygraph(PrecioCierre$IVW) %>%
+  dyOptions(labelsUTC = TRUE, fillGraph=TRUE, fillAlpha=0.5, drawGrid = F, colors="mediumseagreen") %>%
+  dyRangeSelector() %>%
+  dyCrosshair(direction = "vertical") %>%
+  dyHighlight(highlightCircleSize = 5, highlightSeriesBackgroundAlpha = 0.2, hideOnMouseOut = F)  %>%
+  dyRoller(rollPeriod = 1)
+```
+<center>**Fuente: Elaboración propia con salida de R y datos de Yahoo Finance.**</center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+IVW ha tenido un aumento considerable en su precio, podemos observar que al inicio del 2015 tiene un precio de 111.5USD posteriormente a eso comienza con una ligera subida en un precio hasta el 17 de agosto del mismo año, ahí se puede notar que IVW tuvo un declive en su precio que tuvo una duración de una semana aproximadamente, el precio cayó hasta los 105.4USD esto se debió a que en esa fecha hubo una caída de la bolsa de valores en China, consecuencia de ello, las bolsas de valores de Europa y Estados Unidos cayeran por temores a que hubiera una desaceleración económica. [2]
+
+Una vez que la bolsa de valores en China se estabilizó, el precio de IVW tuvo una subida en un precio y llego hasta los 112.11USD para posteriormente mantener una fluctuación hasta el 21 de septiembre de ese mismo año, tuvo otra caída que llego hasta los 105.58USD que igual se debió a otra caída en la bolsa de valores en China y adicionalmente de Tokio.
+
+Posteriormente se puede notar que tuvo una tendencia a la alza hasta noviembre de ese mismo año, para posteriormente mantenerse en un nivel de precio, hasta el final del 2015, donde podemos observar que inicia el 2016, con una tendencia a la baja, hasta el 11 de Febrero. Donde una vez más fue consecuencia de que los mercados financieros en China tuvieron un mal momento, las acciones y su moneda tuvieron un desplome y eso ocasiono que suspendieran actividades.
+
+IVW a partir de esa última caída tuvo un buen momento, podemos observar que mantuvo una tendencia a la alza durante dos años aproximadamente, el 1 de Octubre del 2018 alcanzo un precio de 177.72USD posteriormente la acción comenzó a tener una tendencia a la baja hasta caer a 140.58USD. En ese periodo fue cuando las bolsas de valores tuvieron un desplome, mientras las acciones comenzaban a tener un precio más bajo, los índices de tesoro iban en aumento. En ese periodo se registró que hubo un aumento en las tasas de interés, de igual manera hubo estremecimiento en los mercados asiáticos, debido a ello hubo temores a una desaceleración en el crecimiento económico. [3]
+
+Una vez más, después de esa caída que tuvo IVW, logró recuperarse y mantuvo una tendencia a la alza hasta el 19 de Febrero del año en curso, donde posteriormente los precios se han mantenido a la baja, esto debido a la incertidumbre y el pánico generado por el COVID-19, los mercados financieros han mantenido pérdidas considerables e incluso se han registrado suspensiones de actividades en mercados financieros. Hasta el 19 de Marzo se tiene un precio de 153.69USD. 
+
+Se puede observar que IVW a pesar de que se ha mantenido por al menos un mes a la baja, no ha caído el precio hasta el punto de llegar al precio del 2 de Enero del 2015 que es de 111.5USD.
+</p></div>
+
+# Rendimientos de IVW
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 2. Rendimientos de IVW: enero de 2015 a marzo 2020**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+ RENDIMIENTOS <- ggplot(precios_log, aes(Index)) +
+    geom_line(aes(y = IVW_R, colour = "IVW"))+
+    scale_y_continuous(labels=scales::percent)
+  
+  RENDIMIENTOS 
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+El rendimiento de IVW estuvo fluctuando en un promedio de 5%, debido a que es un instrumento que no presenta demasiada volatilidad. Se puede observar que uno de sus mayores rendimientos es a finales del año 2018, esto se debe a que Dow Jones tuvo ganancias de más de mil puntos en una jornada en tan solo una jornada. De igual manera esta fue consecuencia de lo rápido que había crecido la evolución del mercado tras la elección de Trump ya que se creía que los recortes impositivos y la actitud pro empresarial de Trump y de los republicanos iban a incrementar las ganancias para los más ricos. [4]
+
+De igual manera podemos observar que el rendimiento en febrero de este año es de un 8% aproximadamente, esto debido a que fue cuando se  declaró una pandemia por COVID-19 que fue generada en Wuhan, China, esto generó pánico en todos los mercados, a consecuencia de esto se estableció una cuarentena en la mayoría de los sectores económicos, lo que provoco que se generaran perdidas económicas a nivel mundial. Pero como pudimos leer anteriormente, a pesar de ello IVW cuenta con una excelente liquidez, lo que le ayuda a no caer demasiado.
+</p></div>
+
+# Histogramas y gráficos Q-Q
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 3. Histogramas a niveles IVW: enero de 2015 a marzo 2020**</o></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+ hist_IVW<-ggplot(IVW, aes(x=IVW)) +
+  geom_histogram( binwidth=10, color="blue", alpha=0.9) +
+  ggtitle("Histograma  a niveles") +
+    xlab("Puntos del IVW")+
+    ylab("Frecuencia")
+
+hist_IVW
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+En la figura 3, se puede observar que se tiene una distribución asimétrica positiva y tenemos un sesgo hacia el lado derecho, finalmente es de forma leptocurtica por lo que no se ajusta a una distribución normal.
+
+De igual manera notamos que en el histograma, el índice tuvo el mayor número de repeticiones en los 120 puntos (340 veces aproximadamente). Aunque la mayor parte de la distribución se encuentra alrededor de los 150 puntos.
+</p></div>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 4. Histogramas en rendimientos IVW: enero de 2015 a marzo 2020**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+ hist_IVW_R<-ggplot(IVW_R, aes(x=IVW_R)) +
+    geom_histogram( binwidth=0.001, color="blue", alpha=0.9) +
+    ggtitle("Histograma en rendimientos") +
+    xlab("Rendimientos IVW")+
+    ylab("Frecuencia")
+
+hist_IVW_R
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+En la figura 4, se puede observar que tenemos una curva simétrica, además de que tiene una forma leptocurtica. El valor que mayor frecuencia obtuvo en cuanto a rendimientos, es cero donde se repitió aproximadamente 100 veces. Se puede notar que efectivamente si se tiene una distribución normal de los datos, ya que no se observan en un solo punto de la gráfica.
+</p></div>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 5. Q-Q plot a niveles IVW: enero de 2015 a marzo 2020**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+IVW_QQ<-ggplot(IVW, aes(sample=IVW)) +
+  stat_qq() + stat_qq_line(colour="blue") +
+  ggtitle("Q-Q plot de IVW a niveles") +
+  xlab("Cuantiles teóricos")+
+  ylab("Muestra de cuantil")
+
+ggplotly(IVW_QQ)
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 6. Q-Q plot en rendimientos IVW: enero de 2015 a marzo 2020**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+IVW_QQ_R<-ggplot(precios_log, aes(sample=IVW)) +
+  stat_qq() + stat_qq_line(colour="blue") +
+  ggtitle("Q-Q plot de IVW en rendimientos") +
+  xlab("Cuantiles teóricos")+
+  ylab("Muestra de cuantil")
+
+ggplotly(IVW_QQ_R)
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+# Estacionariedad y pruebas de raices unitarias
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Tabla 4. Pruebas de raíces unitarias**</p></center>
+
+<center>
+|        Variable       	| DFA(Valor p) 	| Phillips-Perron(Valor p) 	| KPSS(Valor p) 	|
+|:---------------------:	|:-------------:	|:--------------------------:	|:----------------:	|
+| IVW (a niveles)    	| 0.3672        	| 0.3576                	| 0.01             	|
+| IVW (rendimientos) 	|   0.01        	| 0.01                       	| 0.1              	|
+|
+</center>
+<center>**Fuente. Elaboración propia con salida de R.**</center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+***Dickey Fuller Aumentada***
+
+IVW a niveles, no se rechaza H0, por lo que concluimos que la serie tiene raíz unitaria.
+
+IVW en rendimientos, se rechaza H0, por lo que no se tiene raíz unitaria.
+
+
+***Phillips Perron***
+
+IVW a niveles, no se rechaza H0, por lo que se tiene raíz unitaria.
+
+IVW en rendimientos, se rechaza H0, por lo que no se tiene raíz unitaria.
+
+***KPSS***
+
+IVW a niveles, se rechaza H0, por lo que se concluye que no es estacionaria.
+
+IVW en rendimientos, no se rechaza H0, por lo que se concluye que es estacionaria.
+</p></div>
+
+# Modelos ARIMA
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 6. Componentes de autocorrelación ACF y PACF**</p></center>
+```{r ,message=F, warning=F,echo=F}
+
+IVW %>% diff() %>% ggtsdisplay(main="Función de Autocorrelación (MA) y Función de Autocorrelación parcial (AR)")
+
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Tabla 5. Resultados del ARIMA(4,1,0) para IVW**</p></center>
+```{r, message=F, warning=F,echo=FALSE}
+fit<-auto.arima(IVW, seasonal=FALSE)
+fit
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+```{r, message=F, warning=F,echo=FALSE}
+checkresiduals(fit,lag=30,test="LB")
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 8. Prueba de raíces unitarias ARIMA(4,1,0) - círculo unitario**</p></center>
+```{r ,message=F, warning=F,echo=F}
+autoplot(fit, title = "Raices invertidas sobre AR y MA")
+```
+
+## Propuesta 1 de modelo ARIMA(4,1,26)
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Tabla 6. Resultados del ARIMA(4,1,26) para IVW**</p></center>
+```{r, message=F, warning=F,echo=FALSE}
+fit1 = arima(IVW, order=c(4,1,26))
+fit1
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 9. Resultados del ARIMA(4,1,26) para IVW**</p></center>
+```{r, message=F, warning=F,echo=FALSE}
+checkresiduals(fit1,lag=30,test="LB")
+
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 10. Prueba de raíces unitarias ARIMA(4,1,26) - círculo unitario**</p></center>
+```{r, message=F, warning=F,echo=FALSE}
+autoplot(fit1, title = "Raices invertidas sobre AR y MA")
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 11. Pronóstico a 20 días de IVW con ARIMA(4,1,0)**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+
+fit %>% forecast(h=20) %>%  autoplot(200)
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+<center><p style="font-family: times, serif; font-size: 15pt">**Figura 12. Pronóstico a 20 días de IVW con ARIMA(4,1,26)**</p></center>
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=6.5, fig.height=4}
+
+fit1 %>% forecast(h=20) %>% autoplot(200)
+```
+<center>**Fuente: elaboración propia con salida de R.**</center>
+
+
+# Referencias Bibliograficas.
+[1]. ETF. (01 de Abril de 2020). ETF. Obtenido de https://www.etf.com/IVW
+
+

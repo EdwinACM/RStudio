@@ -1,0 +1,240 @@
+---
+title: "R Markdown"
+author: "Edwin Cruz"
+date: "28/2/2020"
+output: 
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: true
+    lightbox: true
+    gallery: false
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Temas R Markdown.
+
+En esta sección se agregarán temas para darle un mejor diseño a tu archivo de ***R Markdown*** para ello dejaremos algunas librerias que se tienen que instalar y posteriomente los temas que se pueden agregar al añadir a estas.
+
+Para ello como sabemos para instalar un libreria podemos ocupar el comando:
+
+install.packages("Nombre de la libreria que se requiere")
+
+## Libreria *hrbrthemes*. 
+
+### Tema *ipsum*.
+
+<center>![IPSUM](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Ipsum Theme.jpg)</center>
+
+---
+
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     hrbrthemes::ipsum
+      
+---
+
+## Librería *prettydoc*.
+
+En est libreria podremos observar que tiene una opción llamada *highlight* que especifica el estilo de resaltado de sintaxis. En esa opcion se pueden tomar los valores *github* y *vignette*.
+
+### Tema *cayman*.
+
+<center>![Cayman](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Pretty doc Theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     prettydoc::html_pretty:
+      theme: cayman
+      highlight: github
+      
+---
+
+### Tema *tactile*.
+
+<center>![Tactile](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Tactile theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     prettydoc::html_pretty:
+      theme: tactile
+      highlight: github
+      
+---
+
+### Tema *architect*.
+
+<center>![architect](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Architect theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     prettydoc::html_pretty:
+      theme: architect
+      highlight: github
+      
+---
+
+### Tema *leonids*.
+
+<center>![leonids](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Leonids theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     prettydoc::html_pretty:
+      theme: leonids
+      highlight: github
+      
+---
+
+### Tema *hpstr*.
+
+<center>![hpstr](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Hpstr theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     prettydoc::html_pretty:
+      theme: hpstr
+      highlight: github
+       
+---
+
+## Libreria *rdmformats*.
+
+El valor que toma en este caso *highlight* es *tango*.
+
+### Tema *readthedown*.
+
+<center>![readthedown](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/readthedown theme.png)</center>
+
+---
+    
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     rmdformats::readthedown:
+     highlight: tango
+     
+---
+
+### Tema *material*.
+
+<center>![material](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/material theme.png)</center>
+
+---
+    
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     rmdformats::material:
+     highlight: tango
+     
+---
+
+### Tema *html_docco*.
+
+<center>![html_docco](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/html_docco theme.png)</center>
+
+---
+    
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     rmdformats::html_docco:
+     highlight: tango
+     
+---
+
+### Tema *html_clean*.
+
+<center>![html_clean](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/html_clean theme.png)</center>
+
+---
+    
+    title: 'Titulo del archivo'
+    author: "Nombre del autor"
+    date: "Fecha"
+    output: 
+     rmdformats::html_clean:
+     highlight: tango
+     
+---
+
+## Libreria *tint*.
+
+### Tema *tintHtml*.
+
+<center>![tinthtml](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/tintHtml theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+     author: "Nombre del autor"
+     date: "Fecha"
+     output: 
+      tint::tintHtml
+
+---      
+
+## Libreria tufte.
+
+### Tema tufte_html.
+
+<center>![tufte_html](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/tufte_html theme.png)</center>
+
+---
+
+    title: 'Titulo del archivo'
+     author: "Nombre del autor"
+     date: "Fecha"
+     output: 
+      tufte::tufte_html
+
+---      
+
+# Insertar imagenes en R Markdown.
+
+Durante nuestro archivo nos surge la necesidad de insertar alguna imagen (formato png o jpg), esto lo podemos realizar de diferentes maneras.
+
+* La primera es insertando la ruta de nuestro archivo:
+
+---
+
+    ![Pie de imagen](C:/Users/Carpeta/nombredenuestraimagen.png)
+
+---
+
+* La siguiente forma de agregar una imagen es po medio de un enlace. Aqui debemos tomar en cuenta que el enlace debe ser exactamente el de la imagen en intenet, para ello se recomienda abrir la imagen en una ventana nueva del navegador.
+
+---
+
+    ![Pie de imagen](enlace de imagen)
+
+---

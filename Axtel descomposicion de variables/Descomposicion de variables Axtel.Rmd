@@ -1,0 +1,261 @@
+---
+title: "Descomposición de variables Axtel"
+author: "Edwin Cruz"
+date: "Febrero del 2020"
+output:
+ prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+    css: custom.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Índice** 
+
+1. [Logo Axtel](#id1)
+
+2. [Sobre Axtel](#id2)
+
+3. [Gráfico de cierre Axtel](#id3)
+
+4. [Gráfico de descomposición de variables](#id4)
+
+5. [Gráfico estacional por año](#id5)
+
+6. [Gráfico de pronostico a 252 días](#id6)
+
+7. [Gráfico de pronostico a 230 días](#id7)
+
+8. [Tabla comparativa](#id8)
+
+9. [Tabla de criterios](#id9)
+
+10. [Conclusión de pronostico](#id10)
+
+11. [¿Se compraría la acción el día 14?](#id11)
+
+12. [Referencias bibliográficas](#id12)
+
+<div id='id1' />
+
+---
+
+<center>![AXTEL](F:/Axtel.jpg)</center>
+
+---
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+<div id='id2' />
+**Sobre Axtel**
+
+Axtel S.A.B de C.V. es una emisora mexicana que se dedica al sector de telecomunicaciones enfocada a los mercados  como son el empresarial y gubernamental. A través de su marca Alestra ofrece servicios de Tecnologías de la Información.
+
+Axtel proporciona servicios de telefonía local, larga distancia, internet y servicios adicionales.  desde que en 1990 se incorporó al sector de las telecomunicaciones, AXTEL se convirtió en el proveedor de telefonía de más grande crecimiento. En Octubre del 2006 adquirió a la Compañía Avantel.
+
+En febrero de 2016, Axtel surge como una nueva propuesta de valor para el mercado, a partir de la fusión de dos organizaciones mexicanas líderes, con infraestructura y capacidades complementarias: Alestra y Axtel .
+
+Axtel se adhirió en 2011 al Pacto Mundial de la ONU, la iniciativa de responsabilidad social más grande del mundo. Forma parte del IPC Sustentable de la BMV desde 2013, del Dow Jones Sustainability Index desde 2017 y ha recibido el reconocimiento por parte del CEMEFI como Empresa Socialmente Responsable desde 2008.
+
+Las acciones de Axtel, representadas por Certificados de Participación Ordinaria (CPOs), cotizan desde 2005 en la Bolsa de Valores de México bajo el símbolo “AXTELCPO”.
+</p></div>
+
+```{r, message=F, warning=F,include = FALSE}
+Sys.setenv(LANGUAGE="es")
+library(kableExtra)
+library (knitr)
+library(prettydoc)
+library(caTools)
+library(bitops)
+library(quantmod)
+library(xts)
+library(tseries)
+library(forecast)
+library(timeSeries)
+library(tframePlus)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(ggthemes)
+library(tidyverse)
+library(dygraphs)
+library(gridExtra)
+library(backports)
+library(lubridate)
+library(knitr)
+
+getSymbols("AXTELCPO.MX",src="yahoo",from="2015-01-01",to="2020-02-19")
+
+AXTELCPO.MX <- AXTELCPO.MX[apply(AXTELCPO.MX ,1,function(x) all(!is.na(x))),]
+View(AXTELCPO.MX)
+```
+
+<div id='id3' />
+<center><p style="font-family: times, serif; font-size: 15pt; color:tomato">**Gráfico 1. Comportamiento del precio de cierre de AXTEL de enero de 2015 a febrero de 2020**</p></center>
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=8, fig.height=5.5}
+ dygraph(AXTELCPO.MX$AXTELCPO.MX.Close) %>%
+  dyOptions(labelsUTC = TRUE, fillGraph=TRUE, fillAlpha=0.5, drawGrid = F, colors="lightseagreen") %>%
+  dyRangeSelector() %>%
+  dyCrosshair(direction = "vertical") %>%
+  dyHighlight(highlightCircleSize = 5, highlightSeriesBackgroundAlpha = 0.2, hideOnMouseOut = F)  %>%
+  dyRoller(rollPeriod = 1)
+```
+
+<center> <p style="font-family: times, serif; font-size: 13pt; color:steelblue">**Fuente**: Elaboración propia con datos de *Yahoo Finance* </p></center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+El comportamiento de la gráfica a partir del año 2015 es con tendencia a la alza, donde el precio de la acción de Axtel tuvo un alcance máximo de 8.96MXN,  este fue un año muy volátil para los mercados financieros, estuvo esencialmente determinado por dos cuestiones, una de ellas fue la tasa de interés en los Estados Unidos y otra fue la evolución de los mercados emergentes. Además se también se generó inestabilidad y cambios en la dirección del flujo de capitales a nivel mundial.
+
+A partir del 2016 comienza a tener una tendencia a la baja aproximadamente hasta el 2017, el año 2016 fue caracterizado por una fuerte incertidumbre y tensión controlada en los mercados financieros internacionales que se han visto influenciados tanto por las políticas monetarias de los principales bancos centrales como por las expectativas y el resultado final de dos grandes acontecimientos de carácter político con fuertes implicaciones económicas: el primero fue el Brexit y el segundo acontecimiento fue la victoria del actual presidente de Estados Unidos.
+
+Esta serie de hechos tuvieron como consecuencia que el precio mínimo de la acción bajara hasta 3.39MXN. 
+
+Posteriormente del año 2017 a aproximadamente mitad del año 2018 podemos observar que se tiene una tendencia lineal.
+
+El año 2017, tanto en el ámbito económico como financiero, fue considerado como uno de los mejores de la última década, marcada por la profunda crisis económica y financiera mundial que se inició en 2007 y por los graves episodios de la crisis de deuda soberana en Europa pocos años después. Los mercados de acciones y bonos se caracterizaron por niveles de volatilidad históricamente bajos que han impulsado la confianza.
+
+Posteriormente se nota que se vuelve a tener una tendencia a la baja hasta casi finales de Junio del 2019, en donde la acción comienza de nuevo a tener un repunte en sus acciones, en donde finalmente hasta el día 18 de Febrero del 2020 alcanzaron un precio de 4.2MXN.
+
+</p></div>
+
+```{r, message=F, warning=F,include = FALSE}
+
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 252)
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+```
+
+<div id='id4' />
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=8, fig.height=5.5}
+plot(AXTEL_stl, main="Descomposición de AXTEL a w=252",col= "lightseagreen")
+```
+<center> <p style="font-family: times, serif; font-size: 13pt; color:steelblue">**Fuente**: Elaboración propia con datos de *Yahoo Finance* </p></center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+Al observar la gráfica anterior podemos notar que tiene una estacionalidad, cada año tiene una etapa en la que comienza a incrementarse el precio de nuestra acción, aproximadamente pasa entre los meses Abril y Mayo, y alcanza su punto máximo aproximadamente en Junio-Julio, para posteriormente pasar a alcanzar un punto mínimo que sucede aproximadamente en el mes de Abril, esto quiere decir que sigue un patrón cada año, tiene un comportamiento similar.
+
+Respecto a la tendencia como podemos observar que comenzó a la alza, al llegar a su punto más alto registrado desde 2015, comienza a  cambiar con una tendencia  a la baja, en un punto se mantuvo estable, pero posteriormente continuo bajando el precio de la acción, actualmente se puede notar que nuestra tendencia cambio de sentido, ahora el precio está subiendo pero en cantidades pequeñas.
+</p></div>
+
+```{r, message=F, warning=F,include = FALSE}
+pronostico<-forecast(AXTEL_des, h=252) 
+View(pronostico)
+fecha<-format(date_decimal(as.numeric(row.names(as.data.frame(pronostico)))),"%Y-%m-%d")
+pronostico_completo<-cbind(fecha,as.data.frame(pronostico))
+View(pronostico_completo)
+```
+
+```{r, message=F, warning=F,include = FALSE}
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 230) 
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+
+pronostico1<-forecast(AXTEL_des, h=230) 
+View(pronostico1)
+fecha<-format(date_decimal(as.numeric(row.names(as.data.frame(pronostico1)))),"%Y-%m-%d")
+pronostico1_completo<-cbind(fecha,as.data.frame(pronostico1))
+View(pronostico1_completo)
+```
+
+```{r, message=F, warning=F,include = FALSE}
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 252) 
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+```
+
+<div id='id5' />
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=8, fig.height=5.5}
+ggseasonplot(AXTEL_des,year.labels=TRUE,year.labels.left=T) +
+  ylab("Precio de cierre") +
+  xlab("Componente estacional") +
+  ggtitle("Gráfico estacional de AXTEL por año")
+```
+<center> <p style="font-family: times, serif; font-size: 13pt; color:steelblue">**Fuente**: Elaboración propia con datos de *Yahoo Finance* </p></center>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+Se puede notar que en casi todos los años se muestra una caída del precio de la acción de Axtel aproximadamente en los dos primeros meses, por lo menos en  2017,  2018 y 2019, se muestra que se va manteniendo el precio y a final de año comienza a caer, por otra parte en el 2015 se puede notar que el precio comienza a subir muy poco durante aproximadamente medio año, después de ello se muestra cómo va creciendo el precio de una manera más considerable, caso contrario al 2016 , que el precio de la acción de Axtel continua disminuyendo.
+</p></div>
+
+```{r, message=F, warning=F,include = FALSE}
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 252) 
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+subconjunto <- window(AXTEL_des, start = 2018)
+```
+
+<div id='id6' />
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=8, fig.height=5.5}
+```
+
+```{r, message=F, warning=F,include = FALSE}
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 230) 
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+subconjunto1 <- window(AXTEL_des, start = 2018)
+```
+
+<div id='id7' />
+```{r, warning=F,echo=FALSE, fig.width=4.3, fig.height=4}
+par(mfrow=c(1,2))
+autoplot(subconjunto) + geom_forecast(h=252)+
+  ggtitle("Pronóstico de AXTEL a 252 días, w= 252")
+autoplot(subconjunto1) + geom_forecast(h=230)+
+  ggtitle("Pronóstico de AXTEL a 230 días, w= 230")
+```
+<center> <p style="font-family: times, serif; font-size: 13pt; color:steelblue">**Fuente**: Elaboración propia con datos de *Yahoo Finance* </p></center>
+
+<div id='id8' />
+<center><p style="font-family: times, serif; font-size: 15pt; color:tomato">**Tabla de pronosticos**</p></center>
+
+| Fecha | Precio Real | Pronostico w=252 | Diferencia w=252 | Pronostico w=230 | Diferencia w=230 |
+| -- | -- | -- | -- | -- | -- |
+| 20/02/2020 | $4.24 | $3.9107 | $0.3293 | $3.9142 | $0.3257 |
+| 21/02/2020 | $4.35 | $3.9165 | $0.4334 | $3.9320 | $0.4179 |
+
+<div id='id9' />
+<center><p style="font-family: times, serif; font-size: 15pt; color:tomato">**Tabla de criterios**</p></center>
+| Dato | Pronostico w=252 | Pronostico w=230 |
+| --- | --- | --- |
+| AIC | 2999.344 | 3002.856 |
+| MSE | 0.008718381 | 0.008622166 |
+
+<div id='id10' />
+
+<font style="font-family: times, serif; font-size:12.5pt">
+***Conclusión***
+
+El criterio AIC nos menciona que debe ser menor el valor para tener un mejor ajuste que en este caso es el modelo a 252 días, sin embargo no siempre es así, muchas veces aunque el valor sea menor, no quiere decir que el modelo sea el de mejor ajuste, para ello se aplica el modelo MSE que de igual manera nos dice que el menor valor es el mejor para un pronóstico y en este caso es el modelo a 230 días, sin embargo la diferencia del pronóstico nos ayuda a determinar que efectivamente el modelo a 230 días es mejor, son menos las diferencias entre ellos. De tal manera que concluimos que el mejor modelo para pronosticar el precio de Axtel es el de 230 días. 
+
+<div id='id11' />
+*Por último, ¿Sería conveniente comprar una acción el día 24 de Febrero?*
+
+Efectivamente la compraría ya que el precio en ese momento es bajo y de acuerdo al pronóstico se puede observar que comienza a incrementar los días que siguen, aunque puede ser una decisión de riesgo ya que de acuerdo a la situación actual del mundo, respecto al coronavirus, el valor de las acciones podría ser muy bursátil.
+</p></div>
+
+<div id='id12' />
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:12.5pt">
+***Referencias:***
+
+* Axtel. (24 de Febrero de 2020). Axtel. Obtenido de http://www.axtel.mx/
+
+* Finance, Y. (25 de Febrero de 2020). Yahoo Finance. Obtenido de https://finance.yahoo.com/quote/AXTELCPO.MX?p=AXTELCPO.MX&.tsrc=fin-srch
+
+* mercados, B. y. (24 de Febrero de 2020). Bolsas y Mercados. Obtenido de https://www.bolsasymercados.es/esp/Estudios-Publicaciones/Informe-Mercado/
+
+* Negocios, E. y. (25 de Febrero de 2020). Estrategia y Negocios. Obtenido de https://www.estrategiaynegocios.net/inicio/909646-330/los-10-hitos-de-los-mercados-financieros-en-2015
+
+* Valores, B. M. (25 de Febrero de 2020). Bolsa Mexicana de Valores. Obtenido de https://www.bmv.com.mx/es/mercados/cotizacion/AXTEL%20CPO-6556-3087
+
+* Wikipedia. (24 de Febrero de 2020). Wikipedia. Obtenido de https://es.wikipedia.org/wiki/Axtel
+
+
+</p></div>

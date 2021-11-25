@@ -1,0 +1,20 @@
+---
+title: "Formatos y codigos R"
+author: "Edwin Cruz"
+date: "28/2/2020"
+runtime: shiny
+output:
+ flexdashboard::flex_dashboard:
+    source: embed
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Temas para R Markdown.
+
+**Libreria *hrbrthemes*: Tema *ipsum*.**
+
+![IPSUM](C:/Users/Edwin/Documents/Econometria Financiera/Edwin/R markdown/Ipsum Theme.jpg)
+

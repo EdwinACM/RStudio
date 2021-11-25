@@ -1,0 +1,120 @@
+---
+title: "Descomposición de variables Axtel"
+author: "Edwin Cruz"
+date: "Febrero del 2020"
+output:
+ prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+---
+
+<center>![AXTEL](F:/Axtel.jpg)</center>
+
+---
+
+<div style="text-align: justify">
+Axtel S.A.B de C.V. es una emisora mexicana que se dedica al sector de telecomunicaciones enfocada a los mercados  como son el empresarial y gubernamental. A través de su marca Alestra ofrece servicios de Tecnologías de la Información.
+
+Axtel proporciona servicios de telefonía local, larga distancia, internet y servicios adicionales. Desde que en 1990 se incorporó al sector de las telecomunicaciones, AXTEL se convirtió en el proveedor de telefonía de más grande crecimiento. En Octubre del 2006 adquirió a la Compañía Avantel.
+
+Axtel tiene potencial de crecimiento en México ante una tasa de penetración de internet de sólo un 8% y de líneas telefónicas inalámbricas del 17%.A partir del año 2005 se incorporó a la Bolsa Mexicana de Valores.
+<div/>
+
+```{r, message=F, warning=F,include = FALSE}
+Sys.setenv(LANGUAGE="es")
+library(prettydoc)
+library(caTools)
+library(bitops)
+library(quantmod)
+library(xts)
+library(tseries)
+library(forecast)
+library(timeSeries)
+library(tframePlus)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(hrbrthemes)
+library(ggthemes)
+library(tidyverse)
+library(dygraphs)
+library(gridExtra)
+library(backports)
+library(lubridate)
+library(knitr)
+
+getSymbols("AXTELCPO.MX",src="yahoo",from="2015-01-01",to="2020-02-19")
+
+AXTELCPO.MX <- AXTELCPO.MX[apply(AXTELCPO.MX ,1,function(x) all(!is.na(x))),]
+View(AXTELCPO.MX)
+```
+
+<center>***Gráfico 1. Comportamiento del precio de cierre de AXTEL de enero de 2015 a febrero de 2020***</center>
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=10, fig.height=6}
+ dygraph(AXTELCPO.MX$AXTELCPO.MX.Close) %>%
+  dyOptions(labelsUTC = TRUE, fillGraph=TRUE, fillAlpha=0.5, drawGrid = F, colors="orchid") %>%
+  dyRangeSelector() %>%
+  dyCrosshair(direction = "vertical") %>%
+  dyHighlight(highlightCircleSize = 5, highlightSeriesBackgroundAlpha = 0.2, hideOnMouseOut = F)  %>%
+  dyRoller(rollPeriod = 1)
+```
+<center> **Fuente**: Elaboración propia con datos de *Yahoo Finance* </center>
+
+<div style="text-align: justify">
+El comportamiento de la gráfica del año 2015 al 2016 es con tendencia a la alza, donde el precio de la accion de Axtel tuvo un alcance maximo de 8.96MXN, a partir del 2016 comienza a tener una tendecia a la baja aproximandamente hasta el año 2017, teniendo como precio minimo de la accion 3.39MXN, posteriormente del año 2017 a casi mitad del 2018 podemos obsevar que se tiene una tendencia lineal.
+
+```{r, message=F, warning=F,include = FALSE}
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 252)
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=10, fig.height=6}
+plot(AXTEL_stl, main="Descomposición de AXTEL a w=252",col= "darkorchid")
+```
+
+```{r, message=F, warning=F,include = FALSE}
+pronostico<-forecast(AXTEL_des, h=252) 
+View(pronostico)
+fecha<-format(date_decimal(as.numeric(row.names(as.data.frame(pronostico)))),"%Y-%m-%d")
+pronostico_completo<-cbind(fecha,as.data.frame(pronostico))
+View(pronostico_completo)
+```
+
+```{r, message=F, warning=F,include = FALSE}
+Cierre<-AXTELCPO.MX$AXTELCPO.MX.Close
+AXTEL_des <- ts(Cierre, start = c(2015,01,02), frequency = 230)
+AXTEL_stl<-stl(AXTEL_des[, 1], s.window = "periodic")
+
+pronostico1<-forecast(AXTEL_des, h=230) 
+View(pronostico1)
+fecha<-format(date_decimal(as.numeric(row.names(as.data.frame(pronostico1)))),"%Y-%m-%d")
+pronostico1_completo<-cbind(fecha,as.data.frame(pronostico1))
+View(pronostico1_completo)
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=10, fig.height=6}
+ggseasonplot(AXTEL_des,year.labels=TRUE,year.labels.left=T) +
+  ylab("Precio de cierre") +
+  xlab("Componente estacional") +
+  ggtitle("Gráfico estacional de AXTEL por año")
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=10, fig.height=6}
+subconjunto <- window(AXTEL_des, start = 2018)
+autoplot(subconjunto) + geom_forecast(h=252)+
+  ggtitle("Pronóstico de AXTEL a 252 días, w= 252")
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=10, fig.height=6}
+subconjunto1 <- window(AXTEL_des, start = 2018)
+autoplot(subconjunto1) + geom_forecast(h=230)+
+  ggtitle("Pronóstico de AXTEL a 230 días, w= 230")
+```
+

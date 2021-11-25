@@ -1,0 +1,4 @@
+Prueba,Valor p,H0,Resultado
+Dickey Fuller,0.01000000000000000,La serie tiene raíz unitaria,Rechazo H0
+Phillips Perron,0.01,La serie tiene raíz unitaria,Rechazo H0
+KPSS,0.1,La serie es estacionaria,No Rechazo H0

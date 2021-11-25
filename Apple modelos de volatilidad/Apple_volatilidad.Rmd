@@ -1,0 +1,593 @@
+---
+title: "Modelos de volatilidad"
+author: "Edwin Cruz"
+date: "Junio/2020"
+output: 
+ rmdformats::readthedown:
+     highlight: tango
+---
+
+```{r ,echo=FALSE}
+knitr::opts_chunk$set(comment = NA)
+options(rpubs.upload.method = "internal")
+```
+
+```{r, message=F, warning=F,include = FALSE}
+library(quantmod)
+library(prettydoc)
+library(xts)
+library(tseries)
+library(forecast)
+library(timeSeries)
+library(tframePlus)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(dygraphs)
+library(gridExtra)
+library(rugarch)
+library(FinTS)
+library(RCurl)
+library(packrat)
+library(rsconnect)
+library(markdown)
+library(rmarkdown)
+library(knitr)
+library(flexdashboard)
+library(leaflet)
+library(webshot)
+library(kableExtra)
+```
+
+
+# Apple
+
+## Logo.
+
+<center><img src="Apple.png" alt="Apple" width="500" height="300"></center>
+
+## Sede de Apple.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center'}
+leaflet() %>% addTiles() %>%
+setView(-122.0092, 37.3356, zoom = 15) %>%
+addPopups(-122.0092, 37.3356, 'Apple Park')
+```
+
+## Acerca de Apple.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">
+Apple Inc. (AAPL) es una emisora estadounidense que se dedica a diseñar y producir equipos electrónicos, software y servicios en línea. La compañía ofrece iPhone, una línea de teléfonos inteligentes; Mac, una línea de computadoras personales; iPad, una línea de tabletas multipropósito; y accesorios portátiles, para el hogar y accesorios que comprenden AirPods, Apple TV, Apple Watch, productos Beats, HomePod, iPod touch y otros accesorios de la marca Apple y de terceros. También proporciona tiendas de contenido digital y servicios de transmisión; servicios de soporte AppleCare; e iCloud, un servicio en la nube, que almacena música, fotos, contactos, calendarios, correo, documentos y otros. Además, la compañía ofrece varios servicios, como Apple Arcade, un servicio de suscripción a juegos; Apple Card, una tarjeta de crédito de marca compartida; Apple News +, un servicio de suscripción de noticias y revistas; y Apple Pay, un servicio de pago sin efectivo, además de licenciar su propiedad intelectual y proporcionar otros servicios relacionados.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple Inc. operaba en mayo de 2014, más de 408 tiendas propias en nueve países,4 miles de distribuidores (destacándose los distribuidores premium o Apple Premium Resellers) y una tienda en línea (disponible en varios países) donde se venden sus productos y se presta asistencia técnica. De acuerdo con la revista Fortune, Apple fue la empresa más admirada en el mundo entre 2008 y 2012. En 2015, se convirtió en la empresa más valiosa del mundo según el índice BrandZ al alcanzar los 247 000 millones de euros de valor. El 3 de agosto de 2018, según The Wall Street Journal, la compañía se convirtió en la primera empresa en lograr una capitalización de mercado de 1 billón de dólares.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">*apple.com* es el dominio de la página oficial de Apple Inc., formalmente Apple Computer, Inc (en inglés). Contiene información acerca de sus productos, así como publicidad de sus promociones y anuncios de televisión (generalmente en el formato QuickTime, propiedad de la empresa norteamericana) así como información de soporte. La página www.apple.com/startpage es la predeterminada como inicio en el explorador web Safari.
+Apple Inc. tiene una colaboración con Google para desarrollar el sistema de seguimiento COVID-19 para dispositivos Android e iOS. Apple Inc. fue fundada en 1977 y tiene su sede central en el Apple Park, en Cupertino (California, Estados Unidos) y la sede europea en la ciudad de Cork (Irlanda).
+</font></div>
+
+
+# Precio de cierre
+
+```{r, message=F, warning=F,include = FALSE}
+Precio<- getSymbols("AAPL",  from="2015-01-01",
+                      to="2020-04-30",
+                      auto.assign =F ,src='yahoo') [,4] 
+
+View(Precio)
+
+Apple<- Precio[apply(Precio ,1,function(x) all(!is.na(x))),]
+View(Apple)
+
+colnames(Apple)<- c("Apple")
+View(Apple)
+
+Apple_R <-diff(log(Apple))
+Apple_R <-Apple_R[-1,]
+```
+
+## Gráfica 1. Precio de Cierre de Apple: Enero 2015 - Abril 2020.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center'}
+ dygraph(Apple$Apple) %>%
+  dyOptions(labelsUTC = TRUE, fillGraph=TRUE, fillAlpha=0.5, drawGrid = F, colors="deepskyblue") %>%
+  dyRangeSelector() %>%
+  dyCrosshair(direction = "vertical") %>%
+  dyHighlight(highlightCircleSize = 5, highlightSeriesBackgroundAlpha = 0.2, hideOnMouseOut = F)  %>%
+  dyRoller(rollPeriod = 1)
+```
+
+## Descripción de la gráfica.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Analizando el precio de cierre de Apple desde el año 2015, se puede observar que comienza con un precio de 109.33USD, un precio que si bien tiene una tendencia a la alza desde el 2009, ha tenido algunas caídas.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple a inicios de Enero de 2015 mantiene una tendencia a la alza hasta el 23 de Febrero donde alcanza un punto máximo de 133USD, en esos días fue declarado que Apple había sido la primera compañía que había cerrado en Wall Street con un valor total de 710.700 millones de dólares., si bien ya había alcanzado ese pico, pero no lo había logrado mantener hasta el cierre del mercado.[1]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Fue considerada la empresa más grande del mundo debido a su capital que había acumulado debido a sus grandes ventas de temporada navideña, en primera instancia tenemos las ventas del iPhone 6. La presentación de los iPhone 6 y 6 Plus en septiembre del 2014 fue el prólogo de cómo Apple cerró su trimestre más brillante. El último de 2014 supuso un récord de 18.000 millones de dólares en beneficios.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El año 2015 comenzó con algunos retos para Apple: el lanzamiento del Apple Watch, que presumiblemente llegaría al mercado en abril; la próxima generación de iPhones que por la alternancia de diseños prometen el continuismo como clave, o el misterioso futuro de unos iPod que cumplían tres años sin renovarse, y sin demasiadas esperanzas en su devenir como gama.[2]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Después del 23 de Febrero se puede observar una tendencia lateral hasta el 20 de Julio del mismo año.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">En Marzo es importante recordar que Apple, que ya era considerada la mayor compañía cotizada del mundo, entra en el índice Dow Jones de valores industriales, el indicador de referencia de Wall Street. Apple tomó el lugar de la compañía de telecomunicaciones AT&T. Los títulos de Apple se pagaban en este momento cerca de 130 dólares la unidad. Las acciones de Apple subieron un 1,6% tras el anuncio de Dow Jones. Algunos analistas creían que su capitalización llegaría al billón de dólares en pocos años. La compañía se apreció casi un 1.000% desde el 2009 al 2015, cuando se tocó fondo en Wall Street tras el derrumbe por la crisis financiera.[3]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">En Mayo de ese mismo año Apple fue uno de los peores valores del Nasdaq. El gigante tecnológico cayó en bolsa un 2,20%. Los inversores dudaron de que el iPhone 6 pudiera sostener las ventas de esta gama de Smartphone sin un nuevo lanzamiento en el año, algo que era poco probable.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Las acciones de Apple caían en Junio hasta un 7 por ciento, a 121,99 dólares, en las primeras transacciones de la Bolsa de Nueva York, en un retroceso que borraba más de 50,000 millones de dólares en valor de mercado para el fabricante del iPhone tras la divulgación de sus resultados.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Más tarde, sus títulos se recuperaron levemente para posicionarse en una pérdida del 4,7%, que no deja de tener un impacto negativo sobre todo el mercado tecno. Apple Inc. pronosticó ingresos para el cuarto trimestre por debajo de las estimaciones, lo que hizo que sus acciones se hundieran un 8 por ciento en las operaciones posteriores al cierre del Nasdaq del martes 21 de julio.[4]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Las acciones de Apple perdieron 4.3 por ciento, para ubicarse en 125.14 dólares, al sufrir su mayor caída porcentual diaria desde enero de 2014 un día después de conocerse que la previsión de ingresos del fabricante del iPhone para el cuarto trimestre estuvo por debajo de las expectativas. De esta manera fue que continúo con una tendencia a la baja hasta finales de Agosto, donde tuvo un punto mínimo en 103.12USD.[5]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Posteriormente podemos observar que mantiene una tendencia a la alza de una manera muy poco notable, hasta noviembre de ese mismo año la baja en el precio de las acciones de Apple se debió a que el índice compuesto del mercado Nasdaq, en el que cotizan las principales firmas tecnológicas, retrocedía un 0,35 % o 17,85 puntos, hasta los 5.084,63 enteros. Los analistas atribuyeron los descensos a las preocupaciones geopolíticas después de que en esos días Turquía derribara un avión ruso que, según el Gobierno de Ankara, había entrado a su espacio aéreo.[6]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">En ese mismo año podemos observar que se comenzó a recuperar Apple de aquella pequeña caída que tuvo, para después tener una recuperación por poco tiempo de igual manera y tuvo una tendencia a la baja que fue desde 118.23USD hasta 93.7USD en Febrero del 2016.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El Dow Jones, el índice de referencia de Wall Street, trató como pudo hasta el final de evitar el primer negativo anual desde 2008. También se vino abajo el S&P 500. Ambos se vieron lastrados por el desplome del 30% en el precio del petróleo, los temores a una moderación mayor de la espera en China, la fortaleza del dólar y la falta de una guía de la Reserva Federal.[7]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Posteriormente se puede observar que a partir de Febrero se tiene un leve repunte, esto a causa de que Wall Street apostaba por un nuevo modelo de iPhone a un menor precio. Con ese lanzamiento se podrían aumentar las ventas en los países en desarrollo como China y superar la ralentización que estaban sufriendo a escala global.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El 14 de Abril alcanzó un punto máximo de 112.1USD para posteriormente comenzar una tendencia a la baja.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Una vez que comienza con su tendencia a la baja, Apple se encaminaba a una de sus peores jornadas en Bolsa desde 2009. Las mayores caídas desde entonces las registró en enero de 2014, cuando se desinfló un 8%, y en enero de 2013, cuando se desplomó un 12%.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Al conocer las cuentas de Apple, los inversores aceleraron sus ventas. Las acciones del gigante tecnológico sufrieron caídas en los mercados fuera de hora de Wall Street. En su bajada se desinflaban hasta los 96,1 dólares. La desbandada en Apple restó cerca de 45,000 millones de dólares, unos 40,000 millones de euros, a su capitalización.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La confirmación del freno de sus ventas agrava las dudas sobre la sostenibilidad de su ritmo de crecimiento, hasta el punto de que los analistas no descartan que Apple realice una gran adquisición para recuperar sus niveles previos de crecimiento.[8]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Finalmente el día 12 de Mayo del 2016, alcanzó un precio mínimo de 90.34USD, después de esa caída de Apple, volvió a mantener una tendencia a la alza durante aproximadamente dos	  años, tuvo algunas pérdidas de valor por acción pero alcanzó otro máximo el 23 de Octubre de 2018, donde el precio era de 232.07USD, en ese año podemos ver que la acción tuvo una fuerte caída que alcanzó un mínimo de  142USD el 3 de Enero del 2019, es decir que el último trimestre mantuvo pérdidas.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple había alcanzado su momento de gloria en Agosto, cuando su capitalización bursátil superó el billón de dólares. Desde entonces empezó a rodar cuesta abajo. En ese momento el mercado empezó a olfatear lo que finalmente se confirmó: las ventas del iPhone X no iban a ser tan buenas como se esperaba, agregando que en ese momento había tensión por la guerra de aranceles entre China y EE.UU.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">En una carta a los inversores, el director de la compañía, Tim Cook, les comunicó que tuvieron que recortar las expectativas de ventas para el trimestre octubre-diciembre. La estimación inicial, que oscilaba entre los US 89.000 millones y los US 93.000 millones, se redujo a US 84.000 millones, una caída de entre 5,6% y 9,7%.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple comenzó a tener una recuperación después de los acontecimientos antes mencionados, esto debido a la renovada confianza de los inversores hacia el sector tecnológico y la estrategia de Apple de crecer en la actividad de servicios, con nuevos lanzamientos como el Apple News + o su plataforma de televisión y música, le han hecho recuperar la confianza del mercado. Volvió a posicionarse en el primer lugar de las empresas más valiosas del mundo. El día 3 de Mayo Apple había alcanzado un precio de 211.75USD por acción.[9]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple tuvo otra caída en ese mismo año, que duró un mes aproximadamente, alcanzando un precio de 173.3USD por acción,  fue un reflejo de las  relaciones entre EE.UU. y China después de que Alphabet, la matriz de Google, anunciara que suspendía sus relaciones comerciales con Huawei, que les forzaría a cambiar parte de su hardware y software.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Esta decisión fue una consecuencia de la emergencia nacional declarada por el presidente de EE.UU., Donald Trump, que prohíbe a las compañías estadounidenses hacer negocios con empresas que supuestamente intentaban espiar al país.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El temor a que se desate un conflicto comercial de considerable tamaño que afecte a las principales compañías tecnológicas de ambos países llevo a Apple a caer.[10]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Una vez que la tensión por el tema anterior fue menos, Apple tuvo de nuevo un buen desempeño, su precio alcanzó el precio máximo de 327.2USD el 12 de Febrero de 2020.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Wall Street subía por expectativas de que las principales economías del mundo tomarán medidas para contener el impacto de una desaceleración económica a raíz de la escalada de los conflictos comerciales. El repunte también era apuntalado por una menor demanda por los bonos del Tesoro estadounidense, con los inversores buscando oportunidades en el mercado bursátil tras tres semanas de descensos.[11]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple reportó ingresos del cuarto trimestre de 2019 que superaron las expectativas de Wall Street por la recuperación de la demanda del iPhone y el aumento de las ventas de los wearables. Los resultados marcaron un notable regreso de hace un año, cuando la más valiosa compañía de tecnología no alcanzó sus propios objetivos.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Las acciones de Apple habían subido debido a las expectativas cada vez más altas de nuevos iPhone, AirPods y los ingresos del almacenamiento en iCloud, la App Store y otros servicios. Eso elevó la valoración de las acciones al nivel más alto en al menos una década.[12]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Los índices accionarios de Wall Street, en Estados Unidos, operaron con ganancias el 12 de Febrero debido a los menores temores sobre el coronavirus de China, luego de que el país informó que el número de nuevos casos bajaba. A esto se suma el optimismo de Jerome Powell, presidente de la Reserva Federal (Fed), sobre la economía estadounidense.[13]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple comenzó a tener pérdidas debido al gran impacto que tuvo la actual pandemia causada por el virus Covid-19, esto tuvo como consecuencias que el gigante estadunidense de la tecnología tuviera dificultades para abastecerse de iPhones, fabricados en China, y  por lo tanto la demanda de sus productos cayó ya que sus tiendas en el país asiático estaban temporalmente cerradas.[14]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple y Microsoft subieron más de un 1%, impulsando al índice S&P 500 más que cualquier otra compañía. Los dos gigantes tecnológicos publicaron sus resultados financieros del primer trimestre, lo que dio a los inversores una muestra de cómo ha afectado la pandemia a sus negocios globales.[15]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Finalmente el día 29 de Abril del 2020, el precio de Apple era de 287.73USD, manteniendo una tendencia a la alza.
+</font></div>
+
+
+# Rendimientos
+
+## Gráfica 2. Rendimientos de Apple: Enero de 2015 a Abril 2020.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=8, fig.height=4}
+ Apple_rendimientos<- ggplot(Apple_R, aes(x=Index, y=Apple)) +
+  ggtitle("Apple en rendimientos: Enero 2015 - Abril 2020") +
+  geom_line(color="mediumorchid") +
+  scale_y_continuous(labels=scales::percent)+xlab("Fecha")+
+  ylab("Rendimiento")
+
+ggplotly(Apple_rendimientos)
+```
+
+## Análisis de la gráfica.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">
+El rendimiento de Apple estuvo fluctuando en un promedio de 5%, hasta el 2019, donde pasa a tener una fluctuación del 10%. No se puede apreciar que presente demasiada volatilidad. Se puede observar que uno de sus menores rendimientos (-10%) se presentó iniciando el año 2019, debido a que en ese momento se confirmó que las ventas del iPhone X no iban a ser tan buenas como se esperaba, agregando que en ese momento había tensión por la guerra de aranceles entre China y EE.UU.[9]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">De igual manera podemos observar que el rendimiento en Marzo del 2020 es de un 12% aproximadamente, esto debido a las expectativas cada vez más altas de nuevos iPhone, AirPods y los ingresos del almacenamiento en iCloud, la App Store y otros servicios. Eso elevó la valoración de las acciones al nivel más alto en al menos una década. Había menor temor sobre el coronavirus de China, luego de que el país informó que el número de nuevos casos bajaba.[13]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Posteriormente observamos que se tiene un rendimiento que cae casi un 15% en 2020, fue cuando Apple comenzó a tener pérdidas debido al gran impacto que tuvo la actual pandemia causada por el virus Covid-19, esto tuvo como consecuencias que El gigante estadunidense de la tecnología tuviera dificultades para abastecerse de iPhones, fabricados en China, por lo tanto la demanda de sus productos comenzó a caer.[14]</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Apple es considerada una de las empresas con mejor liquidez.
+</font></div>
+
+
+## Tabla 1. Prueba de raíces unitarias sobre los rendimientos.
+
+```{r, message=F, warning=F,include = FALSE}
+dt2 <- read.csv("C:/Users/Edwin/Documents/Econometria Financiera/Edwin/Pruebas unitarias.csv", header=T)
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+kable(dt2) %>%
+  kable_styling("striped", full_width = F, font_size = 16) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  row_spec(1:3, align = 'c', italic = TRUE, color = "white", background = "royalblue")
+```
+
+# Autocorrelación
+
+## Gráfica 3. Autocorrelación de los rendimientos al cuadrado de Apple.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+par(mfrow=c(2,1))
+acf((Apple_R)^2)
+pacf((Apple_R)^2)
+
+par(mfrow=c(1,1))
+```
+
+## Tabla 2. Prueba de efectos ARCH.
+
+```{r, message=F, warning=F,include = FALSE}
+dt1 <- read.csv("C:/Users/Edwin/Documents/Econometria Financiera/Edwin/Arch.csv", header=T)
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+kable(dt1) %>%
+  kable_styling("striped", full_width = F, font_size = 16) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  row_spec(1, align = 'c', italic = TRUE, color = "white", background = "royalblue")
+```
+
+## Análisis.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Al rechazar la H0, se comprueban los efectos ARCH en los rendimientos de Apple.</font></div>
+
+# Modelos ARCH
+
+```{r, message=F, warning=F,include = FALSE}
+ARCH1 = ugarchspec(variance.model = list(garchOrder=c(1,0)),
+                   mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+arch1_fit = ugarchfit(spec=ARCH1, data =Apple_R)
+
+ARCH2 = ugarchspec(variance.model = list(garchOrder=c(2,0)),
+                   mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+arch2_fit = ugarchfit(spec=ARCH2, data =Apple_R)
+
+ARCH3 = ugarchspec(variance.model = list(garchOrder=c(3,0)),
+                   mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+arch3_fit = ugarchfit(spec=ARCH3, data =Apple_R)
+
+ARCH4 = ugarchspec(variance.model = list(garchOrder=c(4,0)),
+                   mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+arch4_fit = ugarchfit(spec=ARCH4, data =Apple_R)
+
+GARCH11 = ugarchspec(variance.model = list(garchOrder=c(1,1)),
+                   mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+garch11_fit = ugarchfit(spec=GARCH11, data =Apple_R)
+
+GARCH12 = ugarchspec(variance.model = list(garchOrder=c(1,2)),
+                     mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+garch12_fit = ugarchfit(spec=GARCH12, data =Apple_R)
+
+GARCH21 = ugarchspec(variance.model = list(garchOrder=c(2,1)),
+                     mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+garch21_fit = ugarchfit(spec=GARCH21, data =Apple_R)
+
+GARCH22 = ugarchspec(variance.model = list(garchOrder=c(2,2)),
+                     mean.model = list(armaOrder=c(0,0),include.mean=F,archm=F))
+
+garch22_fit = ugarchfit(spec=GARCH22, data =Apple_R)
+```
+
+## Análisis ARCH1.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El primer modelo es un ARCH 1:</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.00+0.05u_{t-1}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La volatilidad de Apple se explica en un 5% por la volatilidad de un día anterior, ω representa básicamente el intercepto de la ecuación de la varianza, es 0 ya que se están modelando los rendimientos, aunado al efecto de reversión a la media.</font></div>
+
+## Gráfica 4. ARCH1 vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(arch1_fit,which=3)
+```
+
+## Análisis ARCH2.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El siguiente modelo a implementar es un ARCH 2:</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} + \underset{ARCH(2)}{\underbrace{\alpha_{2}u_{t-2}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000183+0.160692u_{t-1}^{2}+0.275731u_{t-2}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La volatilidad de Apple se explica en un 16.07 % por la volatilidad de un día anterior y en un 27.57 % por la volatilidad de hace dos días. De manera conjunta, el modelo ARCH(2) captura poco más del 43% de la volatilidad de Apple.</font></div>
+
+## Gráfica 5. ARCH2 vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(arch2_fit,which=3)
+```
+
+## Análisis ARCH3.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El siguiente modelo a implementar es un ARCH 3:</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} + \underset{ARCH(2)}{\underbrace{\alpha_{2}u_{t-2}^{2}}} + \underset{ARCH(3)}{\underbrace{\alpha_{3}u_{t-3}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000158+0.145301u_{t-1}^{2}+0.156118u_{t-2}^{2}+0.191201u_{t-3}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La volatilidad de Apple se explica en un 14.53% por la volatilidad de un día anterior y en un 15.61% por la volatilidad de hace dos días y en un 19.12% por la volatilidad de hace 3 días. De manera conjunta, el modelo ARCH(3) captura poco más del 49% de la volatilidad de Apple.</font></div>
+
+## Gráfica 6. ARCH3 vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(arch3_fit,which=3)
+```
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Hasta este punto, los modelos ARCH(1), ARCH(2) y ARCH(3) cumplen con todas las condiciones: la sumatoria de los parámetros es menor a 1, son significativos y no son negativos.</font></div>
+
+## Análisis ARCH4.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El modelo implementado es un ARCH4:</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} + \underset{ARCH(2)}{\underbrace{\alpha_{2}u_{t-2}^{2}}} + \underset{ARCH(3)}{\underbrace{\alpha_{3}u_{t-3}^{2}}} +
+\underset{ARCH(4)}{\underbrace{\alpha_{4}u_{t-4}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000152+0.134692u_{t-1}^{2}+0.146577u_{t-2}^{2}+0.170968u_{t-3}^{2}+0.051499u_{t-4}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La volatilidad de Apple se explica en un 13.47% por la volatilidad de un día anterior, en un 14.66% por la volatilidad de hace dos días, en un 17.09% por la volatilidad de hace 3 días y en un 5.14% por la volatilidad de hace 4 días. De manera conjunta, el modelo ARCH(4) captura poco más del 50% de la volatilidad de Apple.Y siendo ARCH4 no significativo.</font></div>
+
+## Gráfica 7. ARCH4 vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(arch4_fit,which=3)
+```
+
+## Análisis GARCH (1,1).
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Ahora, se hace el ajuste con un GARCH(1,1):</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} + \underset{GARCH(1)}{\underbrace{\beta_{1}\sigma_{t-1}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000019+0.130782u_{t-1}^{2}+0.805575\sigma_{t-1}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La volatilidad de Apple se explica en un 13.08% por la volatilidad de un día anterior y en un 80.56% por la varianza ajustada de un periodo.</font></div>
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">¿Por qué varianza condicional? Porque la volatilidad o los rendimientos de Apple dependen de la varianza rezagada, es decir, depende del tiempo.</font></div>
+
+## Gráfica 8. GARCH(1,1) vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(garch11_fit,which=3)
+```
+
+## Análisis GARCH (1,2). 
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Ahora, se hace el ajuste con un GARCH(1,2):</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} + \underset{GARCH(1)}{\underbrace{\beta_{1}\sigma_{t-1}^{2}}} +
+\underset{GARCH(2)}{\underbrace{\beta_{2}\sigma_{t-2}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000019+0.130669u_{t-1}^{2}+0.805556\sigma_{t-1}^{2}+0.000003\sigma_{t-2}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La varianza condicional se explica en un 13.07% por la volatilidad de un día anterior, en un 80.55% por la varianza ajustada de un periodo y en un 0.00% por la varianza ajustada rezagada 2 periodos.</font></div>
+
+## Gráfica 9. GARCH(1,2) vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(garch12_fit,which=3)
+```
+
+## Análisis GARCH (2,1).
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Ahora, se hace el ajuste con un GARCH(2,1):</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} +
+\underset{ARCH(2)}{\underbrace{\alpha_{2}u_{t-2}^{2}}}+
+\underset{GARCH(1)}{\underbrace{\beta_{1}\sigma_{t-1}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000020+0.108589u_{t-1}^{2}+0.031796u_{t-2}^{2}+0.791169\sigma_{t-1}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La varianza condicional se explica en un 10.85% por la volatilidad de un día anterior y en un 79.11% por la varianza ajustada rezagada 1 periodo. Sin embargo, el componente ARCH(2) no es significativo.</font></div>
+
+## Gráfica 10. GARCH(2,1) vs rendimientos.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(garch21_fit,which=3)
+```
+
+## Análisis GARCH (2,2).
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">Finalmente, se hace el ajuste con un GARCH(2,2):</font></div>
+
+$$\sigma_{t}^{2}=\omega+\underset{ARCH(1)}{\underbrace{\alpha_{1}u_{t-1}^{2}}} +
+\underset{ARCH(2)}{\underbrace{\alpha_{2}u_{t-2}^{2}}}+
+\underset{GARCH(1)}{\underbrace{\beta_{1}\sigma_{t-1}^{2}}}+
+\underset{GARCH(2)}{\underbrace{\beta_{2}\sigma_{t-2}^{2}}}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">El resultado obtenido es:</font></div>
+
+$$\sigma_{t}^{2}=0.000020+0.108589u_{t-1}^{2}+0.031813u_{t-2}^{2}+0.791195\sigma_{t-1}^{2}+0.000001\sigma_{t-2}^{2}$$
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">La varianza condicional se explica en un 10.85% por la volatilidad de un día anterior y en un 3.18% por la volatilidad de dos días (aunque en los resultados asociados al valor p, el componente ARCH(1) y ARCH(2) no son significativos); también se explica en un 79.11% por la varianza ajustada rezagada 1 periodo y en un 0.00% por la varianza ajustada de dos periodos.</font></div>
+
+## Gráfica 11. GARCH(2,2).
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+plot(garch22_fit,which=3)
+```
+
+# Coeficiente
+
+## Tabla 3. Valor p y coeficientes.
+
+```{r, message=F, warning=F,include = FALSE}
+dt <- read.csv("C:/Users/Edwin/Documents/Econometria Financiera/Edwin/Apple.csv", header=T)
+
+```
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center', fig.width=5, fig.height=4}
+opts <- options(knitr.kable.NA = "")
+knitr::kable(dt) %>%
+  
+  kable_styling("striped", full_width = F, font_size = 16) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  row_spec(1:8, align = 'c', italic = TRUE, color = "white", background = "royalblue")
+```
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">De acuerdo con los resultados, se puede observar que los criterios son mejores en el caso de ARCH4 y GARCH (1,1) y que además los coeficientes son estadísticamente significativos.</font></div>
+
+# Mejores modelos
+
+```{r, message=F, warning=F,include = FALSE}
+Apple.arch4.sim = ugarchsim(arch4_fit,
+                            n.sim=nrow(Apple_R),
+                            rseed=123,
+                            startMethod="unconditional")
+
+Apple.garch11.sim = ugarchsim(garch11_fit,
+                              n.sim=nrow(Apple_R),
+                              rseed=123,
+                              startMethod="unconditional")
+```
+
+## Gráfica 12. Rendimientos reales vs rendimientos estimados.
+
+```{r, message=F, warning=F,echo=FALSE, fig.align='center'}
+par(mfrow=c(3,1))
+plot(Apple_R, main="Apple Rendimientos reales", col = "skyblue", lwd = 1)
+plot(as.xts(Apple.arch4.sim@simulation$seriesSim,
+            order.by=index(Apple_R)),
+     main="Apple Rendimientos simulados ARCH(4)",
+     col = "violet", lwd = 1)
+plot(as.xts(Apple.garch11.sim@simulation$seriesSim,
+            order.by=index(Apple_R)),
+     main="Apple Rendimientos simulados GARCH(1,1)",
+     col = "purple", lwd = 1)
+```
+
+## Conclusión.
+
+<div style="text-align: justify">
+<font style="font-family: times, serif; font-size:14pt">En conclusión, se puede decir que los modelos de volatilidad ayudan a predecir el comportamiento de una acción dada su volatilidad. Como ya se pudo observar no siempre los modelos más elaborados son los que mejor predicen, ya que al realizar los modelos GARCH explicaban la volatilidad de la acción en un 80% en promedio, sin embargo, no todos los coeficientes resultaban estadísticamente significativos. Por otro lado, se obtuvo que la acción de Apple aún sigue teniendo influencia en su volatilidad de acuerdo a su precio de 4 días anteriores. Lo anterior lo podemos observar en el modelo ARCH4, que en promedio explicaban en un 50% a la volatilidad de la acción Apple.</font></div>
+
+# Bibliografía.
+
+[1]. El mundo. (1 de Junio de 2020). El mundo. Obtenido de https://www.elmundo.es/tecnologia/2015/02/11/54da9974ca474140138b458d.html
+
+[2]. Hipertextual. (1 de Junio de 2020). Hipertextual. Obtenido de https://hipertextual.com/2015/02/capitalizacion-de-apple
+
+[3]. El país. (20 de Junio de 2020). El país. Obtenido de https://elpais.com/economia/2015/03/06/actualidad/1425650978_730020.html
+
+[4]. Infobae. (1 de Junio de 2020). Infobae. Obtenido de https://www.infobae.com/2015/07/22/1743340-las-acciones-apple-se-desploman-las-bajas-ventas-del-iphone/
+
+[5]. Jornada. (1 de Junio de 2020). Jornada. Obtenido de https://www.jornada.com.mx/2015/07/23/economia/019n1eco
+
+[6]. El diario. (1 de Junio de 2020). El diario. Obtenido de https://www.eldiario.es/economia/Wall-Street-Dow-Jones-ciento_0_455655104.html
+
+[7]. El país. (1 de Junio de 2020). El país. Obtenido de https://elpais.com/economia/2015/12/30/actualidad/1451485463_304377.html
+
+[8]. Expansion. (1 de Junio de 2020). Expansión. Obtenido de https://www.expansion.com/mercados/2016/04/27/57206212e2704e0b778b45db.html
+
+[9]. Clarín. (2020 de Junio de 2020). Clarín. Obtenido de https://www.clarin.com/tecnologia/apagando-estrella-apple_0_Ynrol7XiW.html
+
+[10]. EFE. (1 de Junio de 2020). EFE. Obtenido de https://www.efe.com/efe/america/economia/wall-street-y-apple-lastrados-por-la-guerra-tecnologica-de-ee-uu-china/20000011-3980570
+
+[11]. Forbes. (1 de Junio de 2020). Forbes. Obtenido de https://www.forbes.com.mx/guerras-comerciales-y-desaceleracion-economica/
+
+[12]. Fortune. (1 de Junio de 2020). Fortune en español. Obtenido de https://www.fortuneenespanol.com/finanzas/apple-supera-expectativas-wall-street-iphone/
+
+[13]. El economista. (1 de Junio de 2020). El economista. Obtenido de https://www.eleconomista.com.mx/mercados/Discurso-de-Fed-pega-a-Wall-Street-20200513-0105.html
+
+[14]. Jornada. (1 de Junio de 2020). Jornada. Obtenido de https://www.jornada.com.mx/ultimas/economia/2020/02/18/apple-pierde-3-en-wall-street-tras-impacto-del-covid-19-1322.html
+
+[15]. Forbes. (1 de Junio de 2020). Forbes. Obtenido de https://www.forbes.com.mx/mercados-wall-street-alza-impulsado-por-los-gigantes-tecnologicos-apple-y-microsoft/
+
+[16]. Yahoo Finance. (1 de Junio de 2020). Yahoo Finance. Obtenido de https://es-us.finanzas.yahoo.com/quote/AAPL/history?p=AAPL&.tsrc=fin-srch
+
+[17]. Investing. (1 de Junio de 2020). Investing. Obtenido de https://mx.investing.com/equities/apple-computer-inc
